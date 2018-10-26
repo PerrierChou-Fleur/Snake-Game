@@ -1,0 +1,425 @@
+ <!DOCTYPE HTML>
+<html>
+   <head>
+      <title>Snake Game</title>
+      <meta charset="UTF-8">
+      <style type="text/css">
+         body {
+            margin: 50px 0px 0px 0px;
+				width: 100%;
+				height: 100%;
+				background-color: #F3F3F3;
+			}
+			div.wrapper {
+				margin-left: auto;
+				margin-right: auto;
+				width: 300px;
+				height: 300px;
+				background-color: #666666;
+				border-style: solid;
+				border-color: #000000;
+				border-width: 1px 1px 1px 1px;
+				display: grid;
+				grid-template-columns: repeat(15, 1fr); /* size */
+				grid-gap: 1px 1px;
+			}
+			.wrapper > div.blank {
+				background-color: #FFFFFF;
+			}
+			.wrapper > div.snake {
+				background-color: #000000;
+			}
+			.wrapper > div.target {
+				background-color: #FF0000;
+			}
+			div.interface {
+				margin-top: 15px;
+				width: 100%;
+				text-align: center;
+			}
+			select {
+				margin: 5px auto 5px auto;
+				width: 100px;
+				height: 30px;
+				display: block;
+				text-align: center;
+			}
+			input#starter {
+				margin: 30px auto 30px auto;
+				width: 200px;
+				height: 30px;
+				display: block;
+			}
+			div.scoreboard {
+				width: 100%;
+				text-align: center;
+			}
+			label#fake {
+				padding: 1px 5px 3px 5px;
+				line-height: 16px;
+				font-family: Tahoma;
+				font-size: 0.8em;
+				background-color: #e1e1e1;
+				border: 1px solid #adadad;
+				cursor: pointer;
+			}
+			input#load {
+				display: none;
+			}
+			div#download {
+            margin-top: 20px;
+            text-align: center;
+         }
+			button {
+				padding: 1px 5px 3px 5px;
+            cursor: pointer;
+         }
+			button.grey {
+				padding: 1px 5px 3px 5px;
+				color: #adadad;
+            cursor: not-allowed;
+         }
+			.scoreboard table {
+				margin: 50px auto 0px auto;
+				border: 1px solid black;
+				border-collapse: collapse;
+			}
+			.scoreboard th {
+				padding: 1px 5px 3px 5px;
+				font-weight: bold;
+				background-color: #e1e1e1;
+				border: 1px solid black;
+				border-collapse: collapse;
+			}
+			.scoreboard td {
+				padding: 1px 5px 3px 5px;
+				border: 1px solid black;
+				border-collapse: collapse;
+			}
+			.newScore {
+				color: #FF0000;
+			}
+			div.footer {
+				height: 20px;
+			}
+      </style>
+      <script type="text/javascript">
+			function appendGrid(size) {
+				const root = document.getElementById('wrapper');
+				for(let i = 0; i < size*size; i++) {
+					const x = i % size;
+					const y = (i - x) / size;
+					const div = document.createElement("div");
+					div.setAttribute('class', "blank");
+					div.setAttribute('id', x + "," + y);
+					root.appendChild(div);
+				}
+			}
+			function getRandomInt(max) {
+				return Math.floor(Math.random() * Math.floor(max));
+			}
+			function newTarget(grid0, snake) {
+				let gridDraw = grid0.slice();
+				for(let block of snake) {
+					document.getElementById(block.x + "," + block.y).className = "snake";
+					gridDraw = gridDraw.filter(function(val) { return val.x != block.x || val.y != block.y; });
+				}
+				const target = gridDraw[getRandomInt(gridDraw.length)];
+				document.getElementById(target.x + "," + target.y).className = "target";
+				return target;
+			}
+			function init(el) {
+				el.value="STOP";
+				const speed = document.getElementById('speed').value;
+				const size = Math.sqrt(document.getElementById('wrapper').childNodes.length);
+				const grid0 = [];
+				for(let i = 0; i < size*size; i++) {
+					const x = i % size;
+					const y = (i - x) / size;
+					grid0.push({x: x, y: y});
+					document.getElementById(x + "," + y).className = "blank";
+				}
+				const snake = [{x: 6, y: 7}, {x: 7, y: 7}, {x: 8, y: 7}];
+				const target = newTarget(grid0, snake);
+				const dir = {x: 1, y: 0};
+				window.setTimeout(function() { engine(false, el, speed, size, grid0, snake, dir, target); }, speed);
+			}
+			function engine(stop, el, speed, size, grid0, snake, dir, target) {
+				el.addEventListener('click', function handler2() {
+					this.value="RESTART";
+					stop = true;
+					this.removeEventListener('click', handler2, false);
+					return stop;
+				}, false);
+				if(stop) {
+					el.addEventListener('click', function handler1() {
+						init(el);
+						this.removeEventListener('click', handler1, false);
+					}, false);
+					return;
+				}
+				const newBlock = {};
+				Object.assign(newBlock, snake[snake.length - 1]);
+				newBlock.x += dir.x;
+				newBlock.y += dir.y;
+				const test = snake.filter(function(val) { return val.x != newBlock.x || val.y != newBlock.y; });
+				if(newBlock.x > (size - 1) || newBlock.y > (size - 1) || newBlock.x < 0 || newBlock.y < 0 || test.length != snake.length) {
+					el.addEventListener('click', function handler1() {
+						init(el);
+						this.removeEventListener('click', handler1, false);
+					}, false);
+					el.value= "RESTART";
+					const difficulte = document.getElementById('speed' + document.getElementById('speed').value).textContent;
+					const score = snake.length - 3;
+					const regex = /^[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸ _~\-]{1,18}$/;
+					let player = window.prompt("Votre score est de " + score + " points.\r\nVeuillez entrer votre nom :");
+					if(player !== null) {
+						while(regex.test(player) === false) {
+							player = window.prompt("Votre score est de " + score + " points.\r\nVeuillez entrer votre nom (de 1 à 18 caractères, lettres, chiffres, espaces, tirets) :");
+						}
+						if(document.getElementById('ranking') !== null) {
+							createRanking([player, score, difficulte]);
+						}
+					}
+					return;
+				}
+				snake.push(newBlock);
+				if(snake[snake.length - 1].x == target.x && snake[snake.length - 1].y == target.y) {
+					document.getElementById(newBlock.x + "," + newBlock.y).className = "snake";
+					target = newTarget(grid0, snake);
+				} else {
+					document.getElementById(snake[0].x + "," + snake[0].y).className = "blank";
+					document.getElementById(newBlock.x + "," + newBlock.y).className = "snake";
+					snake.shift();
+				}
+				document.addEventListener('keydown', function handler3(e) {
+					let dirtemp = {};
+					switch(e.key) {
+						case "ArrowDown":
+							dirtemp = {x: 0, y: 1};
+							break;
+						case "ArrowUp":
+							dirtemp = {x: 0, y: -1};
+							break;
+						case "ArrowLeft":
+							dirtemp = {x: -1, y: 0};
+							break;
+						case "ArrowRight":
+							dirtemp = {x: 1, y: 0};
+							break;
+						default:
+							return dir;
+					}
+					e.preventDefault();
+					if((newBlock.x + dirtemp.x) != (newBlock.x + dir.x) && (newBlock.y + dirtemp.y) != (newBlock.y + dir.y)) {
+						this.removeEventListener('keydown', handler3, false);
+						dir = dirtemp;
+						return dir;
+					} else {
+						return dir;
+					}
+				}, false);
+				window.setTimeout(function() { engine(stop, el, speed, size, grid0, snake, dir, target); }, speed);
+			}
+			function filemodifier(datas) {
+				document.getElementById('save').setAttribute('class', "");
+            const blob = new Blob([datas], {type: 'text/plain'});
+            document.getElementById('file').setAttribute('href', URL.createObjectURL(blob));
+            document.getElementById('save').setAttribute('onClick', "document.getElementById('file').click();");
+         }
+			function normalize(a) {
+				switch(a) {
+					case 'Facile':
+						return 1;
+					case 'Normale':
+						return 2;
+					case 'Difficile':
+						return 3;
+					default:
+						return 0;
+				}
+			}
+			function createNewLine(newScore, cssClass = null) {
+				const row = document.createElement('tr');
+				if(cssClass) {
+					row.setAttribute('class', cssClass);
+				}
+				for(let cellContent of newScore) {
+					const cell = document.createElement('td');
+					cell.textContent = cellContent;
+					row.appendChild(cell);
+				}
+				return row;
+			}
+			function createRanking(newScore = null) {
+				const table = document.getElementById('ranking');
+				if(table.getElementsByClassName('newScore') !== 'undefined') {
+					const cleaning = table.getElementsByClassName('newScore');
+					for(let row of cleaning) {
+						row.classList.remove('newScore');
+					}
+				}
+				let max0 = table.childNodes.length;
+				if(newScore !== null) {
+					if(max0 > 21) {
+						max0 = 21;
+					}
+					const max1 = max0;
+					let increment = false;
+					const regex = /\d+/;
+					for(let i = 1; i < max1; i++) {
+						let line = table.childNodes[i];
+						const score = parseInt(line.childNodes[2].textContent, 10);
+						if(increment === true) {
+							line = table.childNodes[i + 1];
+							let rank = regex.exec(line.childNodes[0].textContent);
+							rank = parseInt(rank[0], 10);
+							rank += 1;
+							line.childNodes[0].textContent = '#' + rank;
+						} else if(score == newScore[1]) {
+							const aa = normalize(line.childNodes[3].textContent);
+							const bb = normalize(newScore[2]);
+							if(bb > aa) {
+								newScore.unshift('#' + i);
+								const row = createNewLine(newScore, "newScore");
+								let rank = regex.exec(line.childNodes[0].textContent);
+								rank = parseInt(rank[0], 10);
+								rank += 1;
+								line.childNodes[0].textContent = '#' + rank;
+								table.insertBefore(row, line);
+								if(max1 == 21) {
+									table.removeChild(table.lastChild);
+								}
+								document.getElementById('save').setAttribute('class', "");
+								increment = true;
+							} else {
+								newScore.unshift('#' + (i + 1));
+								const row = createNewLine(newScore, "newScore");
+								table.insertBefore(row, line.nextSibling);
+								if(max1 == 21) {
+									table.removeChild(table.lastChild);
+								}
+								increment = true;
+							}
+						} else if (score < newScore[1]) {
+							newScore.unshift('#' + i);
+							const row = createNewLine(newScore, "newScore");
+							let rank = regex.exec(line.childNodes[0].textContent);
+							rank = parseInt(rank[0], 10);
+							rank += 1;
+							line.childNodes[0].textContent = '#' + rank;
+							table.insertBefore(row, line);
+							if(max1 == 21) {
+								table.removeChild(table.lastChild);
+							}
+							increment = true;
+						} else if (i + 1 == max1 && max1 < 21) {
+							newScore.unshift('#' + (i + 1));
+							const row = createNewLine(newScore, "newScore");
+							table.appendChild(row);
+						}
+					}
+					if(max1 == 1) {
+						newScore.unshift('#1');
+						const row = createNewLine(newScore, "newScore");
+						table.appendChild(row);
+					}
+				}
+				let ranking = [];
+				for(let line = 1; line < table.childNodes.length; line++) {
+					const temp1 = table.childNodes[line];
+					const temp2 = [];
+					for(let cell = 1; cell < temp1.childNodes.length; cell++) {
+						temp2.push(temp1.childNodes[cell].textContent);
+					}
+					ranking.push(temp2);
+				}
+				ranking.sort(function(a, b) {
+					if (b[1] == a[1]) {
+						const aa = normalize(a[2]);
+						const bb = normalize(b[2]);
+						return bb - aa;
+					} else {
+						return b[1] - a[1];
+					}
+				});
+				if(ranking.length > 0) {
+					for(let i = 0; i < max0; i++) {
+						ranking[i].unshift('#' + (i + 1));
+						ranking[i] = ranking[i].join(';');
+					}
+				}
+				ranking.unshift('Rang;Joueur;Score;Difficulté');
+				const rankingSerialized = ranking.join('\r\n');
+				filemodifier(rankingSerialized);
+			}
+			function createBackup() {
+				const el = document.getElementById('download');
+				const a = document.createElement('a');
+            a.setAttribute('download', "scoreboard");
+            a.setAttribute('id', "file");
+            const button = document.createElement('button');
+				button.setAttribute('id', "save");
+            button.textContent = "Enregistrer le classement";
+				button.setAttribute('class', "grey");
+            el.appendChild(a);
+            el.appendChild(button);
+				document.getElementById('save').setAttribute('onClick', "createRanking();");
+			}
+			function createTable(datas) {
+				document.getElementById('fake').style.display = 'none';
+				const el = document.getElementById('scoreboard');
+				const table = document.createElement('table');
+				table.setAttribute('id', "ranking");
+				datas = datas.split('\r\n');
+				datas[0] = datas[0].split(';');
+				const header = document.createElement('tr');
+				for(let cellContent of datas[0]) {
+					const cell = document.createElement('th');
+					cell.textContent = cellContent;
+					header.appendChild(cell);
+				}
+				table.appendChild(header);
+				for(let i = 1; i < datas.length; i++) {
+					datas[i] = datas[i].split(';');
+					const row = createNewLine(datas[i]);
+					table.appendChild(row);
+				}
+				el.appendChild(table);
+				createBackup();
+			}
+			function filemanager(filelist) {
+            const file = filelist[0];
+            const reader = new FileReader();
+            reader.onload = function(event) { createTable(this.result); };
+            reader.readAsText(file);
+         }
+			function jawascript() {
+				appendGrid(15);
+				const el = document.getElementById('starter');
+				el.addEventListener('click', function handler1() {
+					init(el);
+					this.removeEventListener('click', handler1, false);
+				}, false);
+				el.focus();
+			}
+      </script>
+   </head>
+   <body onLoad="jawascript();">
+		<div class="wrapper" id="wrapper"></div>
+		<div class="interface">
+			<label for="speed">Difficulté :</label>
+			<select id="speed">
+				<option value="300" id="speed300">Facile</option>
+				<option value="200" id="speed200" selected>Normale</option>
+				<option value="100" id="speed100" >Difficile</option>
+			</select>
+			<input type="button" value="START" id="starter">
+		</div>
+		<div class="scoreboard" id="scoreboard">
+			<label for="load" id="fake">Ouvrir un fichier de classement ... </label><input type="file" id="load" onChange="filemanager(this.files);">
+         <div id="download"></div>
+		</div>
+		<div class="footer"></div>
+   </body>
+</html>
